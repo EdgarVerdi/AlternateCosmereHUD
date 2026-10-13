@@ -118,7 +118,8 @@ public class CustomHudOverlay {
                 return;
 
             int curr = manifestation.getMode(spiritweb);
-            Color color = new Color(0xFFDDDDDD).brighter();
+            //Color color = new Color(0xFFDDDDDD).brighter();
+            Color color = Color.white;
             float intensity = 0.5f;
 
             if (curr > 0)
