@@ -135,7 +135,7 @@ public class CustomHudOverlay {
             float r = color.getRed()/255.f, g = color.getGreen()/255.f, b = color.getBlue()/255.f;
 
 
-            float reserve_percentage = 1f- spiritweb.getSelectedManifestation().getInvestitureHud(spiritweb);
+            float reserve_percentage = 1f-manifestation.getInvestitureHud(spiritweb);
             int cut_offset = (int) (size*reserve_percentage);
             RenderSystem.setShaderColor(r, g, b, intensity);
             guiGraphics.blit(resource, x, y+cut_offset, 0, cut_offset, size, size-cut_offset, size, size);
