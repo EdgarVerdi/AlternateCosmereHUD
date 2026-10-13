@@ -233,18 +233,20 @@ public class CustomHudOverlay {
             if (spiritweb.hasManifestation(leftManifestation)) {
                 render_hud_piece(guiGraphics, textures_array[f + EXTRA_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
                 int mode = Math.abs(leftManifestation.getMode(spiritweb));
+                int reserve_percentage = Math.round((1f-leftManifestation.getInvestitureHud(spiritweb))*100);
                 draw_centered_string(guiGraphics, minecraft.font, mode + "", hudPieceX + x_off, hudPieceY + y_off, get_strength_color(leftManifestation, spiritweb).getRGB());
-                draw_centered_string(guiGraphics, minecraft.font, 100 + "%", hudPieceX + x_off, hudPieceY + hudPieceSize - y_off, Config.barColor.getRGB());
+                draw_centered_string(guiGraphics, minecraft.font, reserve_percentage + "%", hudPieceX + x_off, hudPieceY + hudPieceSize - y_off, Config.barColor.getRGB());
             }
             if (spiritweb.hasManifestation(rightManifestation)) {
                 render_hud_piece(guiGraphics, textures_array[f + EXTRA_OFFSET + 1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
-                int mode = Math.abs(leftManifestation.getMode(spiritweb));
+                int mode = Math.abs(rightManifestation.getMode(spiritweb));
+                int reserve_percentage = Math.round((1f-rightManifestation.getInvestitureHud(spiritweb))*100);
                 draw_centered_string(guiGraphics, minecraft.font, mode + "", hudPieceX + 2 * hudPieceSize - x_off, hudPieceY + y_off, get_strength_color(rightManifestation, spiritweb).getRGB());
-                draw_centered_string(guiGraphics, minecraft.font, 100 + "%", hudPieceX + 2 * hudPieceSize - x_off, hudPieceY + hudPieceSize - y_off, Config.barColor.getRGB());
+                draw_centered_string(guiGraphics, minecraft.font, reserve_percentage + "%", hudPieceX + 2 * hudPieceSize - x_off, hudPieceY + hudPieceSize - y_off, Config.barColor.getRGB());
             }
         });
 
-        render_additional_data(minecraft, guiGraphics);
+        //render_additional_data(minecraft, guiGraphics);
     };
 
     private static void render_additional_data(Minecraft minecraft, GuiGraphics guiGraphics){

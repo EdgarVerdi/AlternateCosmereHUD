@@ -25,13 +25,13 @@ public class Config
             .comment("The extra info diamond's y value")
             .defineInRange("extras_y_offset", 8, 0, Integer.MAX_VALUE);
 
-    private static final ForgeConfigSpec.IntValue BACKGROUND_COLOR = BUILDER
+    private static final ForgeConfigSpec.ConfigValue<String> BACKGROUND_COLOR = BUILDER
             .comment("Background Color of UI")
-            .defineInRange("background_color", GuiUtils.BACKGROUND_COLOR.getRGB(), 0, Integer.MAX_VALUE);
+            .define("background_color", getColorHex(GuiUtils.BACKGROUND_COLOR));
 
-    private static final ForgeConfigSpec.IntValue BAR_COLOR = BUILDER
+    private static final ForgeConfigSpec.ConfigValue<String> BAR_COLOR = BUILDER
             .comment("Default color used in the vertical bar above the background, showing how much of the metal is in reserves")
-            .defineInRange("bar_color", 0xFFBBBBBB, 0, Integer.MAX_VALUE);
+            .define("bar_color", "#BBBBBB");
 
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
@@ -40,19 +40,16 @@ public class Config
     public static Color backgroundColor;
     public static Color barColor;
 
-    @SuppressWarnings({"removal"})
-    private static boolean validateItemName(final Object obj)
-    {
-        return obj instanceof final String itemName && ForgeRegistries.ITEMS.containsKey(new ResourceLocation(itemName));
+    private static String getColorHex(Color color){
+        return String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
     }
 
-    @SuppressWarnings({"removal"})
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event)
     {
         extras_x_offset = EXTRAS_X_OFFSET.get();
         extras_y_offset = EXTRAS_Y_OFFSET.get();
-        backgroundColor = new Color(BACKGROUND_COLOR.get());
-        barColor = new Color(BAR_COLOR.get());
+        backgroundColor = Color.decode(BACKGROUND_COLOR.get());
+        barColor = Color.decode(BAR_COLOR.get());
     }
 }
