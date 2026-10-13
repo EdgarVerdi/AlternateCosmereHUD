@@ -30,6 +30,20 @@ public class CustomHudOverlay {
     private static final ResourceLocation TEX_FERUCHEMY_HUD_RIGHT = new ResourceLocation(AlternativeCosmereHUD.MODID, "textures/gui/feruchemy_hud_right.png");
     private static final ResourceLocation TEX_ALLOMANCY_HUD_LEFT = new ResourceLocation(AlternativeCosmereHUD.MODID, "textures/gui/allomancy_hud_left.png");
     private static final ResourceLocation TEX_ALLOMANCY_HUD_RIGHT = new ResourceLocation(AlternativeCosmereHUD.MODID, "textures/gui/allomancy_hud_right.png");
+
+    private static final ResourceLocation TEX_FERUCHEMY_HUD_LEFT_SELECTED = new ResourceLocation(AlternativeCosmereHUD.MODID, "textures/gui/feruchemy_hud_left_selected.png");
+    private static final ResourceLocation TEX_FERUCHEMY_HUD_RIGHT_SELECTED = new ResourceLocation(AlternativeCosmereHUD.MODID, "textures/gui/feruchemy_hud_right_selected.png");
+    private static final ResourceLocation TEX_ALLOMANCY_HUD_LEFT_SELECTED = new ResourceLocation(AlternativeCosmereHUD.MODID, "textures/gui/allomancy_hud_left_selected.png");
+    private static final ResourceLocation TEX_ALLOMANCY_HUD_RIGHT_SELECTED = new ResourceLocation(AlternativeCosmereHUD.MODID, "textures/gui/allomancy_hud_right_selected.png");
+
+    private static final ResourceLocation[] textures_array = {
+            TEX_ALLOMANCY_HUD_LEFT, TEX_ALLOMANCY_HUD_RIGHT,
+            TEX_FERUCHEMY_HUD_LEFT, TEX_FERUCHEMY_HUD_RIGHT,
+
+            TEX_ALLOMANCY_HUD_LEFT_SELECTED, TEX_ALLOMANCY_HUD_RIGHT_SELECTED,
+            TEX_FERUCHEMY_HUD_LEFT_SELECTED, TEX_FERUCHEMY_HUD_RIGHT_SELECTED
+    };
+
     private static final ResourceLocation TEX_X = new ResourceLocation(AlternativeCosmereHUD.MODID, "textures/gui/x.png");
 
     private static final List<Map<String, ResourceLocation>> maps = Stream.of(false, true)
@@ -53,6 +67,7 @@ public class CustomHudOverlay {
             if (!spiritweb.hasManifestation(HudPersistentData.getSpecificManifestation(isFeruchemy, metalType)))
                 render_icon(guiGraphics, TEX_X, x, y, size, Color.white, 1.0f);
         });
+        render_icon(guiGraphics, resource, x, y, size, metalColor, 1.0f);
     }
 
     private static void render_icon(GuiGraphics guiGraphics, ResourceLocation resource, int x, int y, int size, Color color, float alpha){
@@ -84,20 +99,24 @@ public class CustomHudOverlay {
         LazyOptional<ISpiritweb> spirit_web = SpiritwebCapability.get(Minecraft.getInstance().player);
 
         int iconSize = 16;
-        if (HudPersistentData.isFeruchemy()) {
-            int feruchemyX = 10; int feruchemyY = 10; int feruchemySize = 41;
-            render_hud_piece(guiGraphics, TEX_FERUCHEMY_HUD_LEFT, feruchemyX, feruchemyY, feruchemySize);
-            render_hud_piece(guiGraphics, TEX_FERUCHEMY_HUD_RIGHT, feruchemyX, feruchemyY, feruchemySize);
-            render_metallic_icon(guiGraphics, feruchemyX+feruchemySize/8, feruchemyY+4*feruchemySize/8, iconSize, HudPersistentData.isFeruchemy(), HudPersistentData.getLeftMetalType(), spirit_web);
-            render_metallic_icon(guiGraphics, feruchemyX+4*feruchemySize/8, feruchemyY+feruchemySize/8, iconSize, HudPersistentData.isFeruchemy(), HudPersistentData.getRightMetalType(), spirit_web);
-        } else {
-            int allomancyX = 10; int allomancyY = 10; int allomancySize = 30;
-            render_hud_piece(guiGraphics, TEX_ALLOMANCY_HUD_LEFT, allomancyX, allomancyY, allomancySize);
-            render_hud_piece(guiGraphics, TEX_ALLOMANCY_HUD_RIGHT, allomancyX + allomancySize, allomancyY, allomancySize);
-            int iconY = allomancyY+allomancySize/4;
-            render_metallic_icon(guiGraphics, allomancyX+allomancySize/4, iconY, iconSize, HudPersistentData.isFeruchemy(), HudPersistentData.getLeftMetalType(), spirit_web);
-            render_metallic_icon(guiGraphics, allomancyX+5*allomancySize/4, iconY, iconSize, HudPersistentData.isFeruchemy(), HudPersistentData.getRightMetalType(), spirit_web);
-        }
+        int hudPieceX = 10; int hudPieceY = 10; int hudPieceSize = 42;
+        int f = HudPersistentData.isFeruchemy() ? 2 : 0;
+
+        render_hud_piece(guiGraphics, textures_array[f], hudPieceX, hudPieceY, hudPieceSize);
+        render_hud_piece(guiGraphics, textures_array[f+1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
+
+        if (!HudPersistentData.isPushSelected())
+            render_hud_piece(guiGraphics, textures_array[f+4], hudPieceX, hudPieceY, hudPieceSize);
+        else
+            render_hud_piece(guiGraphics, textures_array[f+4+1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
+
+
+        int iconX1 = hudPieceX+(hudPieceSize-iconSize)*7/8;
+        int iconX2 = hudPieceX+(hudPieceSize-iconSize)/8 + hudPieceSize;
+        int iconY = hudPieceY+(hudPieceSize-iconSize)/2-1;
+        render_metallic_icon(guiGraphics, iconX1, iconY, iconSize, HudPersistentData.isFeruchemy(), HudPersistentData.getLeftMetalType(), spirit_web);
+        render_metallic_icon(guiGraphics, iconX2, iconY, iconSize, HudPersistentData.isFeruchemy(), HudPersistentData.getRightMetalType(), spirit_web);
+
 
         int step = 10; int acc = 0;
         int textY = 100;
