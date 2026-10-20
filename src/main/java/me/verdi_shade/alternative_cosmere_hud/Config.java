@@ -1,12 +1,10 @@
 package me.verdi_shade.alternative_cosmere_hud;
 
 import leaf.cosmere.client.gui.GuiUtils;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.awt.*;
 
@@ -44,6 +42,7 @@ public class Config
         return String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
     }
 
+    @SuppressWarnings({"removal"}) // supression must be here
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event)
     {

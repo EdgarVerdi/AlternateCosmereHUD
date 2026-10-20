@@ -18,21 +18,29 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = AlternativeCosmereHUD.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ControllingMetallicHUD {
 
-    private static boolean[] actionWasDown = new boolean[2];
-    private static boolean[] actionScrolled = new boolean[2];
-    private static KeyMapping[] actions = {
+    private static final boolean[] actionWasDown = new boolean[2];
+    private static final boolean[] actionScrolled = new boolean[2];
+    private static final KeyMapping[] actions = {
             ModKeybinds.KEY_ACTION_ONE,
             ModKeybinds.KEY_ACTION_TWO
     };
 
-    // 1. Handle standard Key Clicks
+    private static int powerPopupTimer = 0;
+    public static final int DEFAULT_POWER_POPUP_TIMER = 40;
+
+    public static int getPopupTimer() { return powerPopupTimer; }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
 
+        ControllingMetallicHUD.tickPopup();
+
         for (int i = 0; i < 2; i++) {
             boolean actionIsDown = actions[i].isDown();
-            if (!actionIsDown && actionWasDown[i]) {
+            if (actionIsDown)
+                resetPowerPopupTime();
+            else if (actionWasDown[i]) {
                 if (actionScrolled[i])
                     actionScrolled[i] = false;
                 else if (i == 0)
@@ -45,7 +53,6 @@ public class ControllingMetallicHUD {
         }
     }
 
-    // 2. Handle Mouse Scrolling while holding the key
     @SubscribeEvent
     public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
         // getScrollDelta() is positive for scrolling UP, negative for DOWN
@@ -76,7 +83,6 @@ public class ControllingMetallicHUD {
         ISpiritweb spiritweb = lazy_spiritweb.orElse(null);
         Manifestation manifest = HudPersistentData.getSelectedManifestation();
 
-        //Manifestation feruchemyPower = Manifestations.ManifestationTypes.FERUCHEMY.getManifestation(feruchemyMetal.getID());
         if (!spiritweb.hasManifestation(manifest)) return;
 
         int next_val = spiritweb.getMode(manifest)+modifier;
@@ -85,5 +91,18 @@ public class ControllingMetallicHUD {
         Cosmere.packetHandler().sendToServer(new ChangeManifestationModeMessage(manifest, modifier));
     }
 
+    public static void tickPopup() {
+        if (powerPopupTimer > 0)
+            powerPopupTimer--;
+    }
 
+    public static void resetPowerPopupTime(){
+        powerPopupTimer = DEFAULT_POWER_POPUP_TIMER;
+    }
+
+    public static int getPowerPopupIntendedTransparency(){
+        if (powerPopupTimer > DEFAULT_POWER_POPUP_TIMER/2)
+            return 255;
+        return 255*2*powerPopupTimer / DEFAULT_POWER_POPUP_TIMER;
+    }
 }

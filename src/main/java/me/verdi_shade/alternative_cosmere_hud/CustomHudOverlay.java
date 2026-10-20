@@ -189,6 +189,14 @@ public class CustomHudOverlay {
         guiGraphics.drawString(font, text, startX, startY, color);
     }
 
+    private static void draw_right_aligned_string(GuiGraphics guiGraphics, Font font, String text, int x, int y, int color){
+        guiGraphics.drawString(font, text, x - font.width(text), y, color);
+    }
+
+    private static String capitalizeString(String string){
+        return string.substring(0, 1).toUpperCase() + string.substring(1);
+    }
+
     public static final IGuiOverlay HUD_OVERLAY = (gui, guiGraphics, partialTick, width, height) -> {
         Minecraft minecraft = Minecraft.getInstance();
 
@@ -204,6 +212,8 @@ public class CustomHudOverlay {
 
         Manifestation leftManifestation = HudPersistentData.getLeftManifestation();
         Manifestation rightManifestation = HudPersistentData.getRightManifestation();
+        Metals.MetalType leftMetalType = HudPersistentData.getLeftMetalType();
+        Metals.MetalType rightMetalType = HudPersistentData.getRightMetalType();
 
         render_background(guiGraphics, textures_array[f+BACKGROUND_MASK_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
         render_background(guiGraphics, textures_array[f+BACKGROUND_MASK_OFFSET+1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
@@ -221,8 +231,8 @@ public class CustomHudOverlay {
         int iconX1 = hudPieceX+(hudPieceSize-iconSize)*7/8;
         int iconX2 = hudPieceX+(hudPieceSize-iconSize)/8 + hudPieceSize;
         int iconY = hudPieceY+(hudPieceSize-iconSize)/2-1;
-        render_metallic_icon(guiGraphics, iconX1, iconY, iconSize, leftManifestation, HudPersistentData.getLeftMetalType(), spirit_web);
-        render_metallic_icon(guiGraphics, iconX2, iconY, iconSize, rightManifestation, HudPersistentData.getRightMetalType(), spirit_web);
+        render_metallic_icon(guiGraphics, iconX1, iconY, iconSize, leftManifestation, leftMetalType, spirit_web);
+        render_metallic_icon(guiGraphics, iconX2, iconY, iconSize, rightManifestation, rightMetalType, spirit_web);
 
         render_hud_piece(guiGraphics, textures_array[f+FRAME_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
         render_hud_piece(guiGraphics, textures_array[f+FRAME_OFFSET+1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
@@ -233,18 +243,33 @@ public class CustomHudOverlay {
             if (spiritweb.hasManifestation(leftManifestation)) {
                 render_hud_piece(guiGraphics, textures_array[f + EXTRA_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
                 int mode = Math.abs(leftManifestation.getMode(spiritweb));
-                int reserve_percentage = Math.round((1f-leftManifestation.getInvestitureHud(spiritweb))*100);
+                int reserve_percentage = Math.round((leftManifestation.getInvestitureHud(spiritweb))*100);
                 draw_centered_string(guiGraphics, minecraft.font, mode + "", hudPieceX + x_off, hudPieceY + y_off, get_strength_color(leftManifestation, spiritweb).getRGB());
                 draw_centered_string(guiGraphics, minecraft.font, reserve_percentage + "%", hudPieceX + x_off, hudPieceY + hudPieceSize - y_off, Config.barColor.getRGB());
             }
             if (spiritweb.hasManifestation(rightManifestation)) {
                 render_hud_piece(guiGraphics, textures_array[f + EXTRA_OFFSET + 1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
                 int mode = Math.abs(rightManifestation.getMode(spiritweb));
-                int reserve_percentage = Math.round((1f-rightManifestation.getInvestitureHud(spiritweb))*100);
+                int reserve_percentage = Math.round((rightManifestation.getInvestitureHud(spiritweb))*100);
                 draw_centered_string(guiGraphics, minecraft.font, mode + "", hudPieceX + 2 * hudPieceSize - x_off, hudPieceY + y_off, get_strength_color(rightManifestation, spiritweb).getRGB());
                 draw_centered_string(guiGraphics, minecraft.font, reserve_percentage + "%", hudPieceX + 2 * hudPieceSize - x_off, hudPieceY + hudPieceSize - y_off, Config.barColor.getRGB());
             }
         });
+
+        if (ControllingMetallicHUD.getPopupTimer() > 0) {
+            int color = (ControllingMetallicHUD.getPowerPopupIntendedTransparency() << 24) | 0xFFFFFF;
+            /*
+            draw_centered_string(guiGraphics, minecraft.font, leftMetalType.getName(),
+                    hudPieceX+hudPieceSize/2, hudPieceY+hudPieceSize+5, color);
+            draw_centered_string(guiGraphics, minecraft.font, rightMetalType.getName(),
+                    hudPieceX+3*hudPieceSize/2, hudPieceY+hudPieceSize+5, color);
+            */
+            int offset = 2;
+            draw_right_aligned_string(guiGraphics, minecraft.font, capitalizeString(leftMetalType.getName()),
+                    hudPieceX+hudPieceSize-offset, hudPieceY+hudPieceSize, color);
+            guiGraphics.drawString(minecraft.font, capitalizeString(rightMetalType.getName()),
+                    hudPieceX+hudPieceSize+offset+1, hudPieceY+hudPieceSize, color);
+        }
 
         //render_additional_data(minecraft, guiGraphics);
     };
