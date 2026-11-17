@@ -110,8 +110,9 @@ public class ControllingMetallicHUD {
     }
 
     public static int getPowerPopupIntendedTransparency(){
-        if (powerPopupTimer > DEFAULT_POWER_POPUP_TIMER/2)
-            return 255;
-        return 255*2*powerPopupTimer / DEFAULT_POWER_POPUP_TIMER;
+        int col;
+        if (powerPopupTimer > DEFAULT_POWER_POPUP_TIMER/2) col = 255;
+        else col = 255*2*powerPopupTimer / DEFAULT_POWER_POPUP_TIMER;
+        return (col << 24) | 0xFFFFFF;
     }
 }

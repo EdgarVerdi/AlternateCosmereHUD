@@ -70,8 +70,8 @@ public class HudPersistentData {
         feruchemy_selected_pair = available_groups_to_all_groups_feruchemy[all_groups_to_available_groups_feruchemy[feruchemy_selected_pair]];
 
         twinborn_mode = !separate;
-        if (allomancy_metal != null) twinborn_allomancy_metal = allomancy_metal;
-        if (feruchemy_metal != null) twinborn_feruchemy_metal = feruchemy_metal;
+        twinborn_allomancy_metal = allomancy_metal;
+        twinborn_feruchemy_metal = feruchemy_metal;
 
         available_allomancy_group_num = allomancy_index;
         available_feruchemy_group_num = feruchemy_index;

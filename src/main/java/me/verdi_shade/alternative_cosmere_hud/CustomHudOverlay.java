@@ -26,8 +26,7 @@ import java.util.stream.Stream;
 import static me.verdi_shade.alternative_cosmere_hud.Config.extras_x_offset;
 import static me.verdi_shade.alternative_cosmere_hud.Config.extras_y_offset;
 import static me.verdi_shade.alternative_cosmere_hud.HudPersistentData.METAL_TYPE_GROUPS;
-import static me.verdi_shade.alternative_cosmere_hud.SpiritwebHandling.getSpiritWeb;
-import static me.verdi_shade.alternative_cosmere_hud.SpiritwebHandling.hasManifestation;
+import static me.verdi_shade.alternative_cosmere_hud.SpiritwebHandling.*;
 
 
 @SuppressWarnings({"removal"})
@@ -72,6 +71,10 @@ public class CustomHudOverlay {
     private static final int SELECTED_OFFSET = 4;
     private static final int BACKGROUND_MASK_OFFSET = 8;
     private static final int EXTRA_OFFSET = 12;
+    public static int iconSize = 16;
+    public static int hudPieceX = 10;
+    public static int hudPieceY = 10;
+    public static int hudPieceSize = 42;
 
 
     private static final List<Map<String, ResourceLocation>> maps = Stream.of(false, true)
@@ -189,8 +192,48 @@ public class CustomHudOverlay {
         guiGraphics.drawString(font, text, x - font.width(text), y, color);
     }
 
+    private static void draw_side_aligned_string(GuiGraphics guiGraphics, Font font, String text, int x, int y, int color, boolean isLeft){
+        if (isLeft)
+            draw_right_aligned_string(guiGraphics, font, capitalizeString(text), x, y, color);
+        else
+            guiGraphics.drawString(font, capitalizeString(text), x, y, color);
+    }
+
     private static String capitalizeString(String string){
         return string.substring(0, 1).toUpperCase() + string.substring(1);
+    }
+
+    private static void renderMainHUD(GuiGraphics guiGraphics, int f, int lr, int xOffset,
+                                      Manifestation manifestation, Metals.MetalType metalType){
+        int arr_offset = f+lr;
+        int x = hudPieceX + xOffset;
+        int iconX = x + (lr == 0 ? (hudPieceSize-iconSize)*7/8 : (hudPieceSize-iconSize)/8);
+        int iconY = hudPieceY+(hudPieceSize-iconSize)/2-1;
+
+        render_background(guiGraphics, textures_array[BACKGROUND_MASK_OFFSET+arr_offset], x, hudPieceY, hudPieceSize);
+        if ((HudPersistentData.isPushSelected() ? 1 : 0) == lr)
+            render_hud_piece(guiGraphics, textures_array[SELECTED_OFFSET+arr_offset], x, hudPieceY, hudPieceSize);
+        render_reserves_overlay(guiGraphics, textures_array[BACKGROUND_MASK_OFFSET+arr_offset], x, hudPieceY, hudPieceSize, manifestation);
+        render_metallic_icon(guiGraphics, iconX, iconY, iconSize, manifestation, metalType);
+        render_hud_piece(guiGraphics, textures_array[FRAME_OFFSET+arr_offset], x, hudPieceY, hudPieceSize);
+
+        Font font = Minecraft.getInstance().font;
+
+        if (hasManifestation(manifestation)) {
+            render_hud_piece(guiGraphics, textures_array[EXTRA_OFFSET+arr_offset], x, hudPieceY, hudPieceSize);
+            ISpiritweb spiritweb = getSpiritWeb();
+            int mode = Math.abs(manifestation.getMode(spiritweb));
+            int reserve_percentage = Math.round((manifestation.getInvestitureHud(spiritweb))*100);
+            int xx = x + (lr == 0 ? extras_x_offset: hudPieceSize - extras_x_offset);
+            draw_centered_string(guiGraphics, font, mode + "", xx, hudPieceY + extras_y_offset, get_strength_color(manifestation).getRGB());
+            draw_centered_string(guiGraphics, font, reserve_percentage + "%", xx, hudPieceY + hudPieceSize - extras_y_offset, Config.barColor.getRGB());
+        }
+
+        if (ControllingMetallicHUD.getPopupTimer() > 0) {
+            int xx = x + (lr == 0 ? -2 + hudPieceSize : 3);
+            draw_side_aligned_string(guiGraphics, font, capitalizeString(metalType.getName()), xx, hudPieceY+hudPieceSize,
+                    ControllingMetallicHUD.getPowerPopupIntendedTransparency(), lr == 0);
+        }
     }
 
     public static final IGuiOverlay HUD_OVERLAY = (gui, guiGraphics, partialTick, width, height) -> {
@@ -205,85 +248,31 @@ public class CustomHudOverlay {
 
         if (!HudPersistentData.hasRegisteredPowers()) return;
 
-        int iconSize = 16;
-        int hudPieceX = 10; int hudPieceY = 10; int hudPieceSize = 42;
 
-        Manifestation leftManifestation = HudPersistentData.getLeftManifestation();
-        Manifestation rightManifestation = HudPersistentData.getRightManifestation();
         Metals.MetalType leftMetalType = HudPersistentData.getLeftMetalType();
         Metals.MetalType rightMetalType = HudPersistentData.getRightMetalType();
+        boolean fl = HudPersistentData.isLeftFeruchemy();
+        boolean fr = HudPersistentData.isRightFeruchemy();
 
-        int fl = HudPersistentData.isLeftFeruchemy() ? 2 : 0;
-        int fr = HudPersistentData.isRightFeruchemy() ? 2 : 0;
-
-        render_background(guiGraphics, textures_array[fl+BACKGROUND_MASK_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
-        render_background(guiGraphics, textures_array[fr+BACKGROUND_MASK_OFFSET+1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
-
-        if (!HudPersistentData.isPushSelected())
-            render_hud_piece(guiGraphics, textures_array[fl+SELECTED_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
-        else
-            render_hud_piece(guiGraphics, textures_array[fr+SELECTED_OFFSET+1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
-
-        render_reserves_overlay(guiGraphics, textures_array[fl+BACKGROUND_MASK_OFFSET],
-                hudPieceX, hudPieceY, hudPieceSize, leftManifestation);
-        render_reserves_overlay(guiGraphics, textures_array[fr+BACKGROUND_MASK_OFFSET+1],
-                hudPieceX+hudPieceSize, hudPieceY, hudPieceSize, rightManifestation);
-
-        int iconX1 = hudPieceX+(hudPieceSize-iconSize)*7/8;
-        int iconX2 = hudPieceX+(hudPieceSize-iconSize)/8 + hudPieceSize;
-        int iconY = hudPieceY+(hudPieceSize-iconSize)/2-1;
-        render_metallic_icon(guiGraphics, iconX1, iconY, iconSize, leftManifestation, leftMetalType);
-        render_metallic_icon(guiGraphics, iconX2, iconY, iconSize, rightManifestation, rightMetalType);
-
-        render_hud_piece(guiGraphics, textures_array[fl+FRAME_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
-        render_hud_piece(guiGraphics, textures_array[fr+FRAME_OFFSET+1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
-
-        int x_off = extras_x_offset;
-        int y_off = extras_y_offset;
-        if (spiritweb.hasManifestation(leftManifestation)) {
-            render_hud_piece(guiGraphics, textures_array[fl + EXTRA_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
-            int mode = Math.abs(leftManifestation.getMode(spiritweb));
-            int reserve_percentage = Math.round((leftManifestation.getInvestitureHud(spiritweb))*100);
-            draw_centered_string(guiGraphics, minecraft.font, mode + "", hudPieceX + x_off, hudPieceY + y_off, get_strength_color(leftManifestation).getRGB());
-            draw_centered_string(guiGraphics, minecraft.font, reserve_percentage + "%", hudPieceX + x_off, hudPieceY + hudPieceSize - y_off, Config.barColor.getRGB());
-        }
-        if (spiritweb.hasManifestation(rightManifestation)) {
-            render_hud_piece(guiGraphics, textures_array[fr + EXTRA_OFFSET + 1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
-            int mode = Math.abs(rightManifestation.getMode(spiritweb));
-            int reserve_percentage = Math.round((rightManifestation.getInvestitureHud(spiritweb))*100);
-            draw_centered_string(guiGraphics, minecraft.font, mode + "", hudPieceX + 2 * hudPieceSize - x_off, hudPieceY + y_off, get_strength_color(rightManifestation).getRGB());
-            draw_centered_string(guiGraphics, minecraft.font, reserve_percentage + "%", hudPieceX + 2 * hudPieceSize - x_off, hudPieceY + hudPieceSize - y_off, Config.barColor.getRGB());
+        // Handling Misting / Ferring edge case
+        if (rightMetalType == null && leftMetalType != null){
+            rightMetalType = leftMetalType;
+            leftMetalType = null;
+            fr = HudPersistentData.isLeftFeruchemy();
+            fl = HudPersistentData.isRightFeruchemy(); // redundant
         }
 
-        if (ControllingMetallicHUD.getPopupTimer() > 0) {
-            int color = (ControllingMetallicHUD.getPowerPopupIntendedTransparency() << 24) | 0xFFFFFF;
-            /*
-            draw_centered_string(guiGraphics, minecraft.font, leftMetalType.getName(),
-                    hudPieceX+hudPieceSize/2, hudPieceY+hudPieceSize+5, color);
-            draw_centered_string(guiGraphics, minecraft.font, rightMetalType.getName(),
-                    hudPieceX+3*hudPieceSize/2, hudPieceY+hudPieceSize+5, color);
-            */
-            int offset = 2;
-            draw_right_aligned_string(guiGraphics, minecraft.font, capitalizeString(leftMetalType.getName()),
-                    hudPieceX+hudPieceSize-offset, hudPieceY+hudPieceSize, color);
-            guiGraphics.drawString(minecraft.font, capitalizeString(rightMetalType.getName()),
-                    hudPieceX+hudPieceSize+offset+1, hudPieceY+hudPieceSize, color);
+        int xOffset = 0;
+
+        if (leftMetalType != null) {
+            Manifestation manifestation = getSpecificManifestation(fl, leftMetalType);
+            renderMainHUD(guiGraphics, fl ? 2 : 0, 0, xOffset, manifestation, leftMetalType);
+            xOffset += hudPieceSize;
         }
 
-        //render_additional_data(minecraft, guiGraphics);
+        if (rightMetalType != null) {
+            Manifestation manifestation = getSpecificManifestation(fr, rightMetalType);
+            renderMainHUD(guiGraphics, fr ? 2 : 0, 1, xOffset, manifestation, rightMetalType);
+        }
     };
-
-    private static void render_additional_data(Minecraft minecraft, GuiGraphics guiGraphics){
-        int step = 10; int acc = 0;
-        int textX = 100;
-        RenderSystem.setShaderColor(0f, 1f, 1f, 1f);
-        guiGraphics.drawString(minecraft.font, HudPersistentData.isFeruchemy() ? "Feruchemy" : "Allomancy", textX, (++acc)*step, 0x00FFFF, true);
-        guiGraphics.drawString(minecraft.font, "Allomancy Dir: " + (HudPersistentData.isAllomancyPushSelected() ? "Push" : "Pull"), textX, (++acc)*step, 0x00FFFF, true);
-        guiGraphics.drawString(minecraft.font, "Feruchemy Dir: " + (HudPersistentData.isFeruchemyPushSelected() ? "Push" : "Pull"), textX, (++acc)*step, 0x00FFFF, true);
-        guiGraphics.drawString(minecraft.font, "Allomancy Pair: " + HudPersistentData.getAllomancySelectedPair(), textX, (++acc)*step, 0x00FFFF, true);
-        guiGraphics.drawString(minecraft.font, "Feruchemy Pair: " + HudPersistentData.getFeruchemySelectedPair(), textX, (++acc)*step, 0x00FFFF, true);
-        //guiGraphics.drawString(minecraft.font, HudPersistentData.getSelectedMetalType().toString(), textX, (++acc)*step, 0x00FFFF, true);
-        guiGraphics.drawString(minecraft.font, HudPersistentData.getSelectedManifestation().getName(), textX, (++acc)*step, 0x00FFFF, true);
-        RenderSystem.setShaderColor(0f, 0f, 0f, 1f);
-    }
 }
