@@ -7,14 +7,12 @@ import leaf.cosmere.api.Metals;
 import leaf.cosmere.api.manifestation.Manifestation;
 import leaf.cosmere.api.spiritweb.ISpiritweb;
 import leaf.cosmere.client.gui.GuiUtils;
-import leaf.cosmere.common.cap.entity.SpiritwebCapability;
 import leaf.cosmere.feruchemy.common.Feruchemy;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import net.minecraftforge.common.util.LazyOptional;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
@@ -28,6 +26,8 @@ import java.util.stream.Stream;
 import static me.verdi_shade.alternative_cosmere_hud.Config.extras_x_offset;
 import static me.verdi_shade.alternative_cosmere_hud.Config.extras_y_offset;
 import static me.verdi_shade.alternative_cosmere_hud.HudPersistentData.METAL_TYPE_GROUPS;
+import static me.verdi_shade.alternative_cosmere_hud.SpiritwebHandling.getSpiritWeb;
+import static me.verdi_shade.alternative_cosmere_hud.SpiritwebHandling.hasManifestation;
 
 
 @SuppressWarnings({"removal"})
@@ -91,13 +91,13 @@ public class CustomHudOverlay {
         return manifestation.getManifestationType().equals(Manifestations.ManifestationTypes.FERUCHEMY);
     }
 
-    private static void render_metallic_icon(GuiGraphics guiGraphics, int x, int y, int size, Manifestation manifestation, Metals.MetalType metal, LazyOptional<ISpiritweb> lazySpiritweb) {
+    private static void render_metallic_icon(GuiGraphics guiGraphics, int x, int y, int size, Manifestation manifestation, Metals.MetalType metal) {
         boolean isFeruchemy = isFeruchemy(manifestation);
         ResourceLocation resource = maps.get(isFeruchemy ? 1 : 0).get(metal.getName());
         Color metalColor = metal.getColor();
         // render_icon(guiGraphics, resource, x, y, size, metalColor, 1.0f);
         AtomicBoolean hasMetal = new AtomicBoolean(false);
-        lazySpiritweb.ifPresent(spiritweb -> hasMetal.set(spiritweb.hasManifestation(manifestation)));
+        hasMetal.set(getSpiritWeb().hasManifestation(manifestation));
 
         float r = metalColor.getRed()/255.f, g = metalColor.getGreen()/255.f, b = metalColor.getBlue()/255.f;
         float alpha  = 1.0f;
@@ -131,9 +131,9 @@ public class CustomHudOverlay {
         guiGraphics.blit(resource, x, y, 0, 0, size, size, size, size);
     }
 
-    private static Color get_strength_color(Manifestation manifestation, ISpiritweb spiritweb){
+    private static Color get_strength_color(Manifestation manifestation){
         boolean isFeruchemy = isFeruchemy(manifestation);
-        int curr = manifestation.getMode(spiritweb);
+        int curr = manifestation.getMode(getSpiritWeb());
         Color barColor = Config.barColor;
         //Color color = new Color(0xFFDDDDDD).brighter();
         if (curr != 0) {
@@ -146,29 +146,25 @@ public class CustomHudOverlay {
     }
 
     private static void render_reserves_overlay(
-            GuiGraphics guiGraphics, ResourceLocation resource, int x, int y, int size,
-            LazyOptional<ISpiritweb> lazySpiritweb, Manifestation manifestation
+            GuiGraphics guiGraphics, ResourceLocation resource, int x, int y, int size, Manifestation manifestation
     ){
-        lazySpiritweb.ifPresent(spiritweb -> {
-            if (!spiritweb.hasManifestation(manifestation))
-                return;
+        if (!hasManifestation(manifestation)) return;
 
-            Color barColor = get_strength_color(manifestation, spiritweb);
-            float r = barColor.getRed()/255.f, g = barColor.getGreen()/255.f, b = barColor.getBlue()/255.f;
+        Color barColor = get_strength_color(manifestation);
+        float r = barColor.getRed()/255.f, g = barColor.getGreen()/255.f, b = barColor.getBlue()/255.f;
 
-            float reserve_percentage = 1f-manifestation.getInvestitureHud(spiritweb);
-            int cut_offset = (int) (size*reserve_percentage);
-            RenderSystem.setShaderColor(r, g, b, 1.0f);
-            guiGraphics.blit(resource, x, y+cut_offset, 0, cut_offset, size, size-cut_offset, size, size);
-            RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-        });
+        float reserve_percentage = 1f-manifestation.getInvestitureHud(getSpiritWeb());
+        int cut_offset = (int) (size*reserve_percentage);
+        RenderSystem.setShaderColor(r, g, b, 1.0f);
+        guiGraphics.blit(resource, x, y+cut_offset, 0, cut_offset, size, size-cut_offset, size, size);
+        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
     }
 
     private static void render_reserves_overlay(
             GuiGraphics guiGraphics, ResourceLocation resource, int x, int y, int size,
-            LazyOptional<ISpiritweb> lazySpiritweb, boolean isFeruchemy, Metals.MetalType metal){
-        Manifestation manifestation = HudPersistentData.getSpecificManifestation(isFeruchemy, metal);
-        render_reserves_overlay(guiGraphics, resource, x, y, size, lazySpiritweb, manifestation);
+            boolean isFeruchemy, Metals.MetalType metal){
+        Manifestation manifestation = SpiritwebHandling.getSpecificManifestation(isFeruchemy, metal);
+        render_reserves_overlay(guiGraphics, resource, x, y, size, manifestation);
     }
 
     private static void render_background(GuiGraphics guiGraphics, ResourceLocation resource, int x, int y, int size) {
@@ -204,57 +200,60 @@ public class CustomHudOverlay {
         if (minecraft.options.hideGui) // || gui.getDebugOverlay().showDebugScreen()) {
             return;
 
-        LazyOptional<ISpiritweb> spirit_web = SpiritwebCapability.get(Minecraft.getInstance().player);
+        ISpiritweb spiritweb = getSpiritWeb();
+        if (spiritweb == null) return;
+
+        if (!HudPersistentData.hasRegisteredPowers()) return;
 
         int iconSize = 16;
         int hudPieceX = 10; int hudPieceY = 10; int hudPieceSize = 42;
-        int f = HudPersistentData.isFeruchemy() ? 2 : 0;
 
         Manifestation leftManifestation = HudPersistentData.getLeftManifestation();
         Manifestation rightManifestation = HudPersistentData.getRightManifestation();
         Metals.MetalType leftMetalType = HudPersistentData.getLeftMetalType();
         Metals.MetalType rightMetalType = HudPersistentData.getRightMetalType();
 
-        render_background(guiGraphics, textures_array[f+BACKGROUND_MASK_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
-        render_background(guiGraphics, textures_array[f+BACKGROUND_MASK_OFFSET+1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
+        int fl = HudPersistentData.isLeftFeruchemy() ? 2 : 0;
+        int fr = HudPersistentData.isRightFeruchemy() ? 2 : 0;
+
+        render_background(guiGraphics, textures_array[fl+BACKGROUND_MASK_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
+        render_background(guiGraphics, textures_array[fr+BACKGROUND_MASK_OFFSET+1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
 
         if (!HudPersistentData.isPushSelected())
-            render_hud_piece(guiGraphics, textures_array[f+SELECTED_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
+            render_hud_piece(guiGraphics, textures_array[fl+SELECTED_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
         else
-            render_hud_piece(guiGraphics, textures_array[f+SELECTED_OFFSET+1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
+            render_hud_piece(guiGraphics, textures_array[fr+SELECTED_OFFSET+1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
 
-        render_reserves_overlay(guiGraphics, textures_array[f+BACKGROUND_MASK_OFFSET],
-                hudPieceX, hudPieceY, hudPieceSize, spirit_web, leftManifestation);
-        render_reserves_overlay(guiGraphics, textures_array[f+BACKGROUND_MASK_OFFSET+1],
-                hudPieceX+hudPieceSize, hudPieceY, hudPieceSize, spirit_web, rightManifestation);
+        render_reserves_overlay(guiGraphics, textures_array[fl+BACKGROUND_MASK_OFFSET],
+                hudPieceX, hudPieceY, hudPieceSize, leftManifestation);
+        render_reserves_overlay(guiGraphics, textures_array[fr+BACKGROUND_MASK_OFFSET+1],
+                hudPieceX+hudPieceSize, hudPieceY, hudPieceSize, rightManifestation);
 
         int iconX1 = hudPieceX+(hudPieceSize-iconSize)*7/8;
         int iconX2 = hudPieceX+(hudPieceSize-iconSize)/8 + hudPieceSize;
         int iconY = hudPieceY+(hudPieceSize-iconSize)/2-1;
-        render_metallic_icon(guiGraphics, iconX1, iconY, iconSize, leftManifestation, leftMetalType, spirit_web);
-        render_metallic_icon(guiGraphics, iconX2, iconY, iconSize, rightManifestation, rightMetalType, spirit_web);
+        render_metallic_icon(guiGraphics, iconX1, iconY, iconSize, leftManifestation, leftMetalType);
+        render_metallic_icon(guiGraphics, iconX2, iconY, iconSize, rightManifestation, rightMetalType);
 
-        render_hud_piece(guiGraphics, textures_array[f+FRAME_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
-        render_hud_piece(guiGraphics, textures_array[f+FRAME_OFFSET+1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
+        render_hud_piece(guiGraphics, textures_array[fl+FRAME_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
+        render_hud_piece(guiGraphics, textures_array[fr+FRAME_OFFSET+1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
 
-        spirit_web.ifPresent(spiritweb -> {
-            int x_off = extras_x_offset;
-            int y_off = extras_y_offset;
-            if (spiritweb.hasManifestation(leftManifestation)) {
-                render_hud_piece(guiGraphics, textures_array[f + EXTRA_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
-                int mode = Math.abs(leftManifestation.getMode(spiritweb));
-                int reserve_percentage = Math.round((leftManifestation.getInvestitureHud(spiritweb))*100);
-                draw_centered_string(guiGraphics, minecraft.font, mode + "", hudPieceX + x_off, hudPieceY + y_off, get_strength_color(leftManifestation, spiritweb).getRGB());
-                draw_centered_string(guiGraphics, minecraft.font, reserve_percentage + "%", hudPieceX + x_off, hudPieceY + hudPieceSize - y_off, Config.barColor.getRGB());
-            }
-            if (spiritweb.hasManifestation(rightManifestation)) {
-                render_hud_piece(guiGraphics, textures_array[f + EXTRA_OFFSET + 1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
-                int mode = Math.abs(rightManifestation.getMode(spiritweb));
-                int reserve_percentage = Math.round((rightManifestation.getInvestitureHud(spiritweb))*100);
-                draw_centered_string(guiGraphics, minecraft.font, mode + "", hudPieceX + 2 * hudPieceSize - x_off, hudPieceY + y_off, get_strength_color(rightManifestation, spiritweb).getRGB());
-                draw_centered_string(guiGraphics, minecraft.font, reserve_percentage + "%", hudPieceX + 2 * hudPieceSize - x_off, hudPieceY + hudPieceSize - y_off, Config.barColor.getRGB());
-            }
-        });
+        int x_off = extras_x_offset;
+        int y_off = extras_y_offset;
+        if (spiritweb.hasManifestation(leftManifestation)) {
+            render_hud_piece(guiGraphics, textures_array[fl + EXTRA_OFFSET], hudPieceX, hudPieceY, hudPieceSize);
+            int mode = Math.abs(leftManifestation.getMode(spiritweb));
+            int reserve_percentage = Math.round((leftManifestation.getInvestitureHud(spiritweb))*100);
+            draw_centered_string(guiGraphics, minecraft.font, mode + "", hudPieceX + x_off, hudPieceY + y_off, get_strength_color(leftManifestation).getRGB());
+            draw_centered_string(guiGraphics, minecraft.font, reserve_percentage + "%", hudPieceX + x_off, hudPieceY + hudPieceSize - y_off, Config.barColor.getRGB());
+        }
+        if (spiritweb.hasManifestation(rightManifestation)) {
+            render_hud_piece(guiGraphics, textures_array[fr + EXTRA_OFFSET + 1], hudPieceX + hudPieceSize, hudPieceY, hudPieceSize);
+            int mode = Math.abs(rightManifestation.getMode(spiritweb));
+            int reserve_percentage = Math.round((rightManifestation.getInvestitureHud(spiritweb))*100);
+            draw_centered_string(guiGraphics, minecraft.font, mode + "", hudPieceX + 2 * hudPieceSize - x_off, hudPieceY + y_off, get_strength_color(rightManifestation).getRGB());
+            draw_centered_string(guiGraphics, minecraft.font, reserve_percentage + "%", hudPieceX + 2 * hudPieceSize - x_off, hudPieceY + hudPieceSize - y_off, Config.barColor.getRGB());
+        }
 
         if (ControllingMetallicHUD.getPopupTimer() > 0) {
             int color = (ControllingMetallicHUD.getPowerPopupIntendedTransparency() << 24) | 0xFFFFFF;

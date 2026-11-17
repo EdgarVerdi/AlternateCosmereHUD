@@ -3,13 +3,11 @@ package me.verdi_shade.alternative_cosmere_hud;
 import leaf.cosmere.api.manifestation.Manifestation;
 import leaf.cosmere.api.spiritweb.ISpiritweb;
 import leaf.cosmere.common.Cosmere;
-import leaf.cosmere.common.cap.entity.SpiritwebCapability;
 import leaf.cosmere.common.network.packets.ChangeManifestationModeMessage;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -28,11 +26,24 @@ public class ControllingMetallicHUD {
     private static int powerPopupTimer = 0;
     public static final int DEFAULT_POWER_POPUP_TIMER = 40;
 
+    private static final int TICKS_TO_UPDATE_GUI = 20; // 20 ticks per second * 1 seconds
+    private static int updateGUITicks = TICKS_TO_UPDATE_GUI;
+
     public static int getPopupTimer() { return powerPopupTimer; }
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
+
+        if (Minecraft.getInstance().player == null)
+            return;
+
+        updateGUITicks++;
+
+        if (updateGUITicks >= TICKS_TO_UPDATE_GUI) {
+            updateGUITicks = 0;
+            HudPersistentData.update_availability_arrays();
+        }
 
         ControllingMetallicHUD.tickPopup();
 
@@ -78,9 +89,7 @@ public class ControllingMetallicHUD {
     }
 
     private static void change_manifestation_strength(int modifier){
-        LazyOptional<ISpiritweb> lazy_spiritweb =  SpiritwebCapability.get(Minecraft.getInstance().player);
-        if (!lazy_spiritweb.isPresent()) return;
-        ISpiritweb spiritweb = lazy_spiritweb.orElse(null);
+        ISpiritweb spiritweb = SpiritwebHandling.getSpiritWeb();
         Manifestation manifest = HudPersistentData.getSelectedManifestation();
 
         if (!spiritweb.hasManifestation(manifest)) return;

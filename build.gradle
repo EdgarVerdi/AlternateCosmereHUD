@@ -133,6 +133,7 @@ dependencies {
     //implementation fg.deobf("curse.maven:cosmere-475343:8342762") // API
     implementation fg.deobf("curse.maven:allomancer-678468:8342764")
     implementation fg.deobf("curse.maven:feruchemist-678466:8342765")
+    implementation fg.deobf("curse.maven:hemalurgy-678469:8342766")
 
     //JEI
     compileOnly fg.deobf("mezz.jei:jei-1.20.1-common-api:15.20.0.132")
