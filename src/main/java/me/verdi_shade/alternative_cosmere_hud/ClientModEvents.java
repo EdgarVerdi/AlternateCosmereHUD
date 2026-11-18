@@ -5,6 +5,8 @@ import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import leaf.cosmere.common.config.CosmereConfigs;
 
 // The 'bus = Mod.EventBusSubscriber.Bus.MOD' is critical here!
 @Mod.EventBusSubscriber(modid = AlternativeCosmereHUD.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -19,5 +21,13 @@ public class ClientModEvents {
     public static void registerKeys(RegisterKeyMappingsEvent event) {
         event.register(ModKeybinds.KEY_ACTION_ONE);
         event.register(ModKeybinds.KEY_ACTION_TWO);
+    }
+
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        event.enqueueWork(() -> {
+            CosmereConfigs.CLIENT_CONFIG.disableSelectedManifestationHud.set(true);
+            CosmereConfigs.CLIENT_CONFIG.getConfigSpec().save();
+        });
     }
 }

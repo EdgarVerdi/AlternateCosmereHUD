@@ -7,6 +7,7 @@ import leaf.cosmere.common.network.packets.ChangeManifestationModeMessage;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -114,5 +115,10 @@ public class ControllingMetallicHUD {
         if (powerPopupTimer > DEFAULT_POWER_POPUP_TIMER/2) col = 255;
         else col = 255*2*powerPopupTimer / DEFAULT_POWER_POPUP_TIMER;
         return (col << 24) | 0xFFFFFF;
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLogin(ClientPlayerNetworkEvent.LoggingIn event) {
+        HudPersistentData.update_availability_arrays();
     }
 }

@@ -9,7 +9,7 @@ public class ModKeybinds {
     public static final String CATEGORY = "key.category.alternative_cosmere_hud";
 
     public static final KeyMapping KEY_ACTION_ONE = new KeyMapping(
-            "key.mymod.action_one", // The translation key for the controls menu
+            "key.alternative_cosmere_hud.toggle_metallic_art", // The translation key for the controls menu
             KeyConflictContext.IN_GAME, // Only works while actively playing
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_Z,
@@ -17,7 +17,7 @@ public class ModKeybinds {
     );
 
     public static final KeyMapping KEY_ACTION_TWO = new KeyMapping(
-            "key.mymod.action_two",
+            "key.alternative_cosmere_hud.toggle_push_pull",
             KeyConflictContext.IN_GAME,
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_X,

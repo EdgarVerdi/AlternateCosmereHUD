@@ -66,8 +66,13 @@ public class HudPersistentData {
             if (right) {if (feruchemy_metal == null) feruchemy_metal = metal_pair[1];else separate = true;}
         }
 
+        int temp = allomancy_selected_pair;
         allomancy_selected_pair = available_groups_to_all_groups_allomancy[all_groups_to_available_groups_allomancy[allomancy_selected_pair]];
+        if (temp != allomancy_selected_pair) bumpAllomancyPushSelected();
+
+        temp = feruchemy_selected_pair;
         feruchemy_selected_pair = available_groups_to_all_groups_feruchemy[all_groups_to_available_groups_feruchemy[feruchemy_selected_pair]];
+        if (temp != feruchemy_selected_pair) bumpFeruchemyPushSelected();
 
         twinborn_mode = !separate;
         twinborn_allomancy_metal = allomancy_metal;
@@ -84,6 +89,10 @@ public class HudPersistentData {
         return available_allomancy_group_num + available_feruchemy_group_num > 0;
     }
 
+    public static boolean hasASingleRegisteredPower(){
+        return available_allomancy_group_num + available_feruchemy_group_num == 1;
+    }
+
     public static void toggleMetallicArt(){
         if (twinborn_mode || available_allomancy_group_num == 0 || available_feruchemy_group_num == 0) return;
         HudPersistentData.is_feruchemy = !HudPersistentData.is_feruchemy;
@@ -97,6 +106,11 @@ public class HudPersistentData {
         HudPersistentData.is_allomancy_push_selected = !HudPersistentData.is_allomancy_push_selected;
     }
 
+    public static void bumpAllomancyPushSelected(){
+        if (!hasSpecificManifestation(false, METAL_TYPE_GROUPS[allomancy_selected_pair][getAllomancySelectedInPair()]))
+            toggleAllomancyPushSelected();
+    }
+
     public static boolean isAllomancyPushSelected() {
         return HudPersistentData.is_allomancy_push_selected;
     }
@@ -107,6 +121,11 @@ public class HudPersistentData {
 
     public static void toggleFeruchemyPushSelected(){
         HudPersistentData.is_feruchemy_push_selected = !HudPersistentData.is_feruchemy_push_selected;
+    }
+
+    public static void bumpFeruchemyPushSelected(){
+        if (!hasSpecificManifestation(true, METAL_TYPE_GROUPS[feruchemy_selected_pair][getFeruchemySelectedInPair()]))
+            toggleFeruchemyPushSelected();
     }
 
     public static boolean isFeruchemyPushSelected() {
@@ -168,15 +187,18 @@ public class HudPersistentData {
     }
 
     public static void incrementAllomancySelectedPair(){
-        int availability_index = all_groups_to_available_groups_allomancy[allomancy_selected_pair];
-        int next_availability_index= modulo(availability_index +1, available_allomancy_group_num);
-        allomancy_selected_pair = available_groups_to_all_groups_allomancy[next_availability_index];
+        directAllomancySelectedPair(1);
     }
 
     public static void decreaseAllomancySelectedPair(){
+        directAllomancySelectedPair(-1);
+    }
+
+    public static void directAllomancySelectedPair(int val){
         int availability_index = all_groups_to_available_groups_allomancy[allomancy_selected_pair];
-        int next_availability_index= modulo(availability_index -1, available_allomancy_group_num);
+        int next_availability_index= modulo(availability_index + val, available_allomancy_group_num);
         allomancy_selected_pair = available_groups_to_all_groups_allomancy[next_availability_index];
+        bumpAllomancyPushSelected();
     }
 
     public static void directAllomancySelectedPair(double val){
@@ -187,15 +209,18 @@ public class HudPersistentData {
     }
 
     public static void incrementFeruchemySelectedPair(){
-        int availability_index = all_groups_to_available_groups_feruchemy[feruchemy_selected_pair];
-        int next_availability_index= modulo(availability_index +1, available_feruchemy_group_num);
-        feruchemy_selected_pair = available_groups_to_all_groups_feruchemy[next_availability_index];
+        directFeruchemySelectedPair(1);
     }
 
     public static void decreaseFeruchemySelectedPair(){
+        directFeruchemySelectedPair(-1);
+    }
+
+    public static void directFeruchemySelectedPair(int val){
         int availability_index = all_groups_to_available_groups_feruchemy[feruchemy_selected_pair];
-        int next_availability_index= modulo(availability_index -1, available_feruchemy_group_num);
+        int next_availability_index= modulo(availability_index + val, available_feruchemy_group_num);
         feruchemy_selected_pair = available_groups_to_all_groups_feruchemy[next_availability_index];
+        bumpFeruchemyPushSelected();
     }
 
     public static void directFeruchemySelectedPair(double val){
